@@ -11,17 +11,52 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## ¿Qué es el muestrador de Gibbs?
 
-This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+- Permite muestrar de una distribución sin tener que calcular la densidad.
+- Está basada en cadenas de Markov
+- Queremos muestrar de f(x)
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+$$ f(x) = \int \cdots \int f(x, y_1, \cdots, y_p) dy_1 \cdots dy_p $$
 
-## Slide with Bullets
+- ¿Qué podemos hacer?
+- Resolver analítica o numéricamente, pero ¿si no se puede?
 
-- Bullet 1
-- Bullet 2
-- Bullet 3
 
-## Slide with R Output
+
+## ¿Qué es una cadena de Markov?
+
+
+## ¿Cómo funciona el muestrador de Gibbs? (i)
+
+- Ilustraremos con un ejemplo bivariado. Queremos muestras de $f(x)$ (distribuida de manera conjunta con $y$). Conocemos las condicionales $f(x|y)$ y $f(y|x)$.
+
+- Se especifica un valor inicial para $Y'_0 = y'_0$. 
+
+- Se obtiene apartir de las condicionales una sucesión de muestras para x e y:
+
+$$
+X'_j \sim f(x|Y'_j = y'_j)
+$$
+$$
+Y'_{j+1} \sim f(y|X'_j = x'_j)
+$$
+
+## ¿Cómo funciona el muestrador de Gibbs? (ii)
+
+
+- Obtenemos así una secuencia: $Y'_0, X'_0, Y'_1, X'_1,\cdots Y'_k, X'_k,$
+
+- Resulta que bajo algunas condiciones generales, cuando $k \rightarrow \infty$, $X'_k$ es efectivamente una muestra de $f(x)$
+
+
+## Aplicación I
+
+- Tenemos X e Y que tienen distribuciones condicionales del tipo exponencial (restringidas al intervalo $(0,B)$:
+
+$$
+f(x|y) \propto y e^{-yx}, 0 < x < B < \infty \\
+f(y|x) \propto x e^{-xy}, 0 < y < B < \infty 
+$$
+
 
 ```{r cars, echo = TRUE}
 summary(cars)

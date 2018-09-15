@@ -3110,18 +3110,42 @@ if (document.readyState !== "loading" &&
           </hgroup>
   </slide>
 
-<slide class=""><hgroup><h2>R Markdown</h2></hgroup><article  id="r-markdown">
-
-<p>This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <a href='http://rmarkdown.rstudio.com' title=''>http://rmarkdown.rstudio.com</a>.</p>
-
-<p>When you click the <strong>Knit</strong> button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.</p>
-
-</article></slide><slide class=""><hgroup><h2>Slide with Bullets</h2></hgroup><article  id="slide-with-bullets">
+<slide class=""><hgroup><h2>¿Qué es el muestrador de Gibbs?</h2></hgroup><article  id="que-es-el-muestrador-de-gibbs">
 
 <ul>
-<li>Bullet 1</li>
-<li>Bullet 2</li>
-<li>Bullet 3</li>
+<li>Permite muestrar de una distribución sin tener que calcular la densidad.</li>
+<li>Está basada en cadenas de Markov</li>
+<li>Queremos muestrar de f(x)</li>
+</ul>
+
+<p>\[ f(x) = \int \cdots \int f(x, y_1, \cdots, y_p) dy_1 \cdots dy_p \]</p>
+
+<ul>
+<li>¿Qué podemos hacer?</li>
+<li>Resolver analítica o numéricamente, pero ¿si no se puede?</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>¿Qué es una cadena de Markov?</h2></hgroup><article  id="que-es-una-cadena-de-markov">
+
+</article></slide><slide class=""><hgroup><h2>¿Cómo funciona el muestrador de Gibbs? (i)</h2></hgroup><article  id="como-funciona-el-muestrador-de-gibbs-i">
+
+<ul>
+<li><p>Ilustraremos con un ejemplo bivariado. Queremos muestras de \(f(x)\) (distribuida de manera conjunta con \(y\)). Conocemos las condicionales \(f(x|y)\) y \(f(y|x)\).</p></li>
+<li><p>Se especifica un valor inicial para \(Y&#39;_0 = y&#39;_0\).</p></li>
+<li><p>Se obtiene apartir de las condicionales una sucesión de muestras para x e y:</p></li>
+</ul>
+
+<p>\[
+X&#39;_j \sim f(x|Y&#39;_j = y&#39;_j)
+\] \[
+Y&#39;_{j+1} \sim f(y|X&#39;_j = x&#39;_j)
+\]</p>
+
+</article></slide><slide class=""><hgroup><h2>¿Cómo funciona el muestrador de Gibbs? (ii)</h2></hgroup><article  id="como-funciona-el-muestrador-de-gibbs-ii">
+
+<ul>
+<li><p>Obtenemos así una secuencia: \(Y&#39;_0, X&#39;_0, Y&#39;_1, X&#39;_1,\cdots Y&#39;_k, X&#39;_k,\)</p></li>
+<li><p>Resulta que bajo algunas condiciones generales, cuando \(k \rightarrow \infty\), \(X&#39;_k\) es efectivamente una muestra de \(f(x)\)</p></li>
 </ul>
 
 </article></slide><slide class=""><hgroup><h2>Slide with R Output</h2></hgroup><article  id="slide-with-r-output">

@@ -7,6 +7,9 @@ output: ioslides_presentation
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+library(ggplot2)
+library(dplyr)
+library(truncdist)
 ```
 
 ## ¿Qué es el muestrador de Gibbs?
@@ -57,10 +60,77 @@ f(x|y) \propto y e^{-yx}, 0 < x < B < \infty \\
 f(y|x) \propto x e^{-xy}, 0 < y < B < \infty 
 $$
 
+## Distribución
 
-```{r cars, echo = TRUE}
-summary(cars)
+```{r include=FALSE}
+B <- 5
+k <- 100
+R <- 25000 #numero de repeticiones a mantener
+burnin <- 1500 #observaciones a descartar
+iter <- R + burnin
+y <- -1 #inicializa el algoritmo
+
+#inicializamos los vectores donde se guardarán las sucesiones
+X_vec <- vector(mode="double", length=R)
+Y_vec <- vector(mode="double", length=R)
+
+
 ```
+
+```{r eval=FALSE, include=FALSE}
+for (i in c(1:R)) {
+  y <- rtrunc(1, spec = "norm", a = 0, b = B)
+  
+  for (j in 1:500) {
+    K_x <- 1 / (1 - exp(-B*y))
+    x <- rtrunc(1, spec = "exp", a = 0, b = B, rate = y)
+    K_y <- 1 / (1 - exp(-B*x))
+    y <- rtrunc(1, spec = "exp", a = 0, b = B, rate = x)
+  }
+  X_vec[i] <- x
+  Y_vec[i] <- y
+}
+
+hist(X_vec)
+```
+```{r eval=FALSE, include=FALSE}
+for (i in c(1:R)) {
+  y <- rtrunc(1, spec = "norm", a = 0, b = B)
+  
+  for (j in 1:k) {
+    u <- rtrunc(1, spec = "unif", a = -1, b = 1 / (1 - exp(-B*y)))
+    x <- -log(1 - u * (1 - exp(-B*y))) / y
+    u <- rtrunc(1, spec = "unif", a = -1, b = 1 / (1 - exp(-B*x)))
+    y <- -log(1 - u * (1 - exp(-B*x))) / x
+  }
+  X_vec[i] <- x
+  Y_vec[i] <- y
+}
+
+hist(X_vec)
+```
+```{r metodo_diego, include=FALSE}
+y <- rtrunc(1, spec = "norm", a = 0, b = B)
+for (i in 1:iter) {
+  K_x <- 1 / (1 - exp(-B*y))
+  x <- rtrunc(1, spec = "exp", a = 0, b = B, rate = y)
+  K_y <- 1 / (1 - exp(-B*x))
+  y <- rtrunc(1, spec = "exp", a = 0, b = B, rate = x)  
+  if (i > burnin) {
+    X_vec[i] <- x
+    Y_vec[i] <- y
+  }
+  }
+  
+```
+
+```{r}
+data_frame(val = X_vec) %>%
+          ggplot(., aes(val)) + 
+                geom_histogram(aes(y=..density..), binwidth = 0.2, colour="black", fill="white") + 
+                 geom_density(alpha=.2, fill="#FF6666") 
+```
+
 
 ## Slide with Plot
 

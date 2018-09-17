@@ -2,7 +2,9 @@
 title: "Muestrador de Gibbs"
 author: "Diego Uriarte"
 date: "14/9/2018"
-output: ioslides_presentation
+output: 
+  ioslides_presentation:
+    smaller: true
 ---
 
 ```{r setup, include=FALSE}
@@ -62,13 +64,13 @@ $$
 
 ## Distribución
 
-```{r include=FALSE}
-B <- 5
-k <- 100
-R <- 25000 #numero de repeticiones a mantener
-burnin <- 1500 #observaciones a descartar
+- Tomamos B = 5, se mantienen 25000 repeticiones y se desechan las primeras 1500.Los muestreos se realizan de distribuciones truncas exponenciales.
+
+```{r include=FALSE, eval=FALSE}
+B <- 5 #parámetro que trunca la dist. exponencial
+k <- 15 #
+R <- 500 #numero de repeticiones a mantener
 iter <- R + burnin
-y <- -1 #inicializa el algoritmo
 
 #inicializamos los vectores donde se guardarán las sucesiones
 X_vec <- vector(mode="double", length=R)
@@ -81,7 +83,7 @@ Y_vec <- vector(mode="double", length=R)
 for (i in c(1:R)) {
   y <- rtrunc(1, spec = "norm", a = 0, b = B)
   
-  for (j in 1:500) {
+  for (j in 1:k) {
     K_x <- 1 / (1 - exp(-B*y))
     x <- rtrunc(1, spec = "exp", a = 0, b = B, rate = y)
     K_y <- 1 / (1 - exp(-B*x))
@@ -91,8 +93,15 @@ for (i in c(1:R)) {
   Y_vec[i] <- y
 }
 
-hist(X_vec)
 ```
+
+```{r include=FALSE, eval=FALSE}
+data_frame(val = X_vec) %>%
+          ggplot(., aes(val)) + 
+                geom_histogram(aes(y=..density..), binwidth = 0.5, colour="black", fill="white") + 
+                 geom_density(alpha=.2, fill="#FF6666") 
+```
+
 ```{r eval=FALSE, include=FALSE}
 for (i in c(1:R)) {
   y <- rtrunc(1, spec = "norm", a = 0, b = B)
@@ -109,7 +118,25 @@ for (i in c(1:R)) {
 
 hist(X_vec)
 ```
-```{r metodo_diego, include=FALSE}
+
+```{r include=FALSE}
+B <- 5
+k <- 100
+R <- 25000 #numero de repeticiones a mantener
+burnin <- 1500 #observaciones a descartar
+iter <- R + burnin
+y <- -1 #inicializa el algoritmo
+
+#inicializamos los vectores donde se guardarán las sucesiones
+X_vec <- vector(mode="double", length=R)
+Y_vec <- vector(mode="double", length=R)
+
+
+```
+
+
+```{r metodo_diego_wk, include=FALSE}
+#algoritmo de sampling visto en clase
 y <- rtrunc(1, spec = "norm", a = 0, b = B)
 for (i in 1:iter) {
   K_x <- 1 / (1 - exp(-B*y))
@@ -124,7 +151,7 @@ for (i in 1:iter) {
   
 ```
 
-```{r}
+```{r fig.height=3, fig.width=4}
 data_frame(val = X_vec) %>%
           ggplot(., aes(val)) + 
                 geom_histogram(aes(y=..density..), binwidth = 0.2, colour="black", fill="white") + 
@@ -132,9 +159,111 @@ data_frame(val = X_vec) %>%
 ```
 
 
-## Slide with Plot
+## Una prueba simple de la convergencia del muestrador de Gibbs
 
-```{r pressure}
-plot(pressure)
-```
+Mostraremos como converge el muestreo tomando como ejemplo una distribución bivariada, donde X e Y se distribuyen Bernoulli de manera conjunta.
 
+
+<div class="centered">
+![](images/01_ejemplo-distribucion-bivariada-bernoulli.jpg)
+</div>
+
+***
+La distribución conjunta de X, Y está dada por:
+
+\[
+\begin{bmatrix}f_{x,y}(0,0) & f_{x,y}(1,0)\\
+f_{x,y}(0,1) & f_{x,y}(1,1)
+\end{bmatrix}=\begin{bmatrix}p_{1} & p_{2}\\
+p_{\text{3}} & p_{4}
+\end{bmatrix}
+\]
+
+La marginal de X es:
+
+\[
+f_x = \begin{bmatrix} p_1 + p_3 & p_2 + p_4
+\end{bmatrix} 
+\]
+
+Determinamos las probabilidades condicionales $X|Y = y$ e $Y|X = x$, formulando las siguientes matrices:
+
+\[
+A_{y|x}=\begin{bmatrix} Prob(Y=0|X=0) & Prob(Y=1|X=0)\\
+                        Prob(Y=0|X=1)& Prob(Y=1|X=1)  
+\end{bmatrix}
+=
+\begin{bmatrix} \frac{p_1}{p_1+p_3} & \frac{p_3}{p_1+p_3}\\
+                \frac{p_2}{p_2+p_4}& \frac{p_4}{p_2+p_4}
+\end{bmatrix}
+\]
+
+\[
+A_{x|y}=\begin{bmatrix} Prob(X=0|Y=0) & Prob(X=1|Y=0)\\
+                        Prob(X=0|Y=1)& Prob(X=1|Y=1)  
+\end{bmatrix}
+=
+\begin{bmatrix} \frac{p_1}{p_1+p_2} & \frac{p_2}{p_1+p_2}\\
+                \frac{p_3}{p_3+p_4}& \frac{p_4}{p_3+p_4}
+\end{bmatrix}
+\]
+
+***
+
+Dado que estamos interesados en muestrar de la marginal de X, nos interesan los valores $X'_0, X'_1, X'_2, \cdots$. Sin embargo, para ir de $X'_0 \rightarrow X'_1$ debemos  muestrar $Y'_1$, es decir, $X'_0 \rightarrow Y'_1 \rightarrow X'_1$. 
+
+
+$$
+P(X'_1 = x_1 |X'_0 = x_0) = \sum_y P(X'_1 = x_1 |Y'_1 = y) \times P(Y'_1 = y_1 |X'_0 = x_0) 
+$$
+
+
+Para este caso en particular, se tiene que la matrices de transición para x está dada por:
+
+\[A_{x|x} = A_{y|x} A_{x|y}\]
+
+Ahora, es directo calcular la distribución marginal de realización k, $X'_k$:
+
+$f_k = f_0 A^k_{x|x} = (f_0 A^{k-1}_{x|x})A_{x|x} = f_{k-1}A_{x|x}$
+
+
+
+***
+
+Bajo ciertas condiciones, se tiene un punto fijo tal que:
+
+$$ f = f A_{x|x}$$
+
+En nuestro caso simple:
+
+
+$$
+\begin{aligned}
+f_x A_{x|x} &=  f_x A_{y|x} A_{x|y} \\
+            &=  \begin{bmatrix}
+                   p_1 + p_3 & p_2 + p_4
+                \end{bmatrix}
+                \begin{bmatrix} 
+                  \frac{p_1}{p_1+p_3} & \frac{p_3}{p_1+p_3}\\
+                  \frac{p_2}{p_2+p_4}& \frac{p_4}{p_2+p_4}
+                \end{bmatrix} 
+                \begin{bmatrix} 
+                  \frac{p_1}{p_1+p_2} & \frac{p_2}{p_1+p_2}\\
+                  \frac{p_3}{p_3+p_4}& \frac{p_4}{p_3+p_4}
+                \end{bmatrix} \\
+            &=  \begin{bmatrix}
+                   p_1 + p_2 & p_3 + p_4
+                \end{bmatrix}
+                \begin{bmatrix} 
+                  \frac{p_1}{p_1+p_2} & \frac{p_2}{p_1+p_2}\\
+                  \frac{p_3}{p_3+p_4}& \frac{p_4}{p_3+p_4}
+                \end{bmatrix}\\
+            &= \begin{bmatrix}
+                   p_1 + p_3 & p_2 + p_4
+                \end{bmatrix} \\
+            &= f_x 
+\end{aligned}
+$$
+
+
+***

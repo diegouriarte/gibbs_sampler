@@ -311,5 +311,17 @@ f(x|y) =  y e^{-yx}, 0 < x < \infty \\
 f(y|x) = x e^{-xy}, 0 < y < \infty 
 $$
 $$
-f_{X}(x) = \left [ y\exp^{-yx}t\exp^{-ty} \right]
+\begin{aligned}
+f_{X}(x) &= \int \left [\int y\exp^{-yx}t\exp^{-ty}dy \right]f_X(t)dt \\
+         &= \int \left [\frac{t}{(x+t)^2} \right]f_X(t)dt
+\end{aligned}
+$$
+Y notamos que $f_X(t) = 1/t$ es solución puesto que:
+
+$$
+\begin{aligned}
+\frac{1}{x} &= \int_0^\infty \left [\frac{t}{(x+t)^2} \right]\frac{1}{t}dt \\
+            &= \int_0^\infty \left [\frac{1}{(x+t)^2} \right]dt \\
+            &= \int_0^\infty \left [\frac{1}{(x+t)^2} \right]dt \\
+\end{aligned}
 $$

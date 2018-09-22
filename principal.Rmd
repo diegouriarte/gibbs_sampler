@@ -266,4 +266,50 @@ f_x A_{x|x} &=  f_x A_{y|x} A_{x|y} \\
 $$
 
 
+
 ***
+
+# Intuición para el caso bivariado
+
+-> ¿Cómo es que podemos llegar a partir de las condicionales a la marginal? 
+
+- Conocemos $f_{X|Y}(x|y)$ y $f_{Y|X}(y|x)$. Si queremos la marginal, por definición:
+
+$$
+f_X(x) = \int f_{xy}(x,y)dy
+$$
+- Por Bayes sabemos que: $f_{xy}(x,y) = f_{X|Y}(x|y)f_Y(y)$, por tanto:
+
+$$
+f_X(x) = \int f_{X|Y}(x|y)f_Y(y)dy
+$$
+De manera similar, tenemos $f_{xy}(x,y) = f_{Y|X}(y|x)f_X(y)$ con $f_Y(y) = \int f_{Y|X}(y|x)f_X(x)dx$. Reemplazando:
+
+$$
+\begin{aligned}
+f_X(x) &= \int f_{X|Y}(x|y)\int f_{Y|X}(y|t)f_X(t)dtdy \\
+       &= \int \left [ \int f_{X|Y}(x|y) f_{Y|X}(y|t) dy \right ]f_X(t)dt \\
+       &= \int h(x,t)f_X(t)dt
+\end{aligned}
+$$
+
+con $h(x,t) = \left [ \int f_{X|Y}(x|y) f_{Y|X}(y|t) dy \right ]$.
+
+- Llegamos a lo que se conoce como una ecuación de punto fijo integral.
+
+- La secuencia de Gibbs es una manera de converger a la solución de la ecuación.
+
+***
+
+¿Siempre tiene solución?
+
+Veamos el primer ejemplo, pero sin acotar las distribuciones condicionales.
+
+
+$$
+f(x|y) =  y e^{-yx}, 0 < x < \infty \\
+f(y|x) = x e^{-xy}, 0 < y < \infty 
+$$
+$$
+f_{X}(x) = \left [ y\exp^{-yx}t\exp^{-ty} \right]
+$$

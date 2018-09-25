@@ -1,10 +1,11 @@
 ---
 title: "Muestrador de Gibbs"
 author: "Diego Uriarte"
-date: "14/9/2018"
-output: 
+date: "24/9/2018"
+output:
   ioslides_presentation:
-    smaller: true
+    smaller: no
+  beamer_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -12,12 +13,15 @@ knitr::opts_chunk$set(echo = FALSE)
 library(ggplot2)
 library(dplyr)
 library(truncdist)
+library(grid)
+library(gridExtra)
+library(knitr)    # For knitting document and include_graphics function
+set.seed(14021991)
 ```
 
 ## ¿Qué es el muestrador de Gibbs?
 
 - Permite muestrar de una distribución sin tener que calcular la densidad.
-- Está basada en cadenas de Markov
 - Queremos muestrar de f(x)
 
 $$ f(x) = \int \cdots \int f(x, y_1, \cdots, y_p) dy_1 \cdots dy_p $$
@@ -26,11 +30,7 @@ $$ f(x) = \int \cdots \int f(x, y_1, \cdots, y_p) dy_1 \cdots dy_p $$
 - Resolver analítica o numéricamente, pero ¿si no se puede?
 
 
-
-## ¿Qué es una cadena de Markov?
-
-
-## ¿Cómo funciona el muestrador de Gibbs? (i)
+## ¿Cómo funciona el muestrador de Gibbs?
 
 - Ilustraremos con un ejemplo bivariado. Queremos muestras de $f(x)$ (distribuida de manera conjunta con $y$). Conocemos las condicionales $f(x|y)$ y $f(y|x)$.
 
@@ -45,128 +45,39 @@ $$
 Y'_{j+1} \sim f(y|X'_j = x'_j)
 $$
 
-## ¿Cómo funciona el muestrador de Gibbs? (ii)
-
-
 - Obtenemos así una secuencia: $Y'_0, X'_0, Y'_1, X'_1,\cdots Y'_k, X'_k,$
 
 - Resulta que bajo algunas condiciones generales, cuando $k \rightarrow \infty$, $X'_k$ es efectivamente una muestra de $f(x)$
 
 
-## Aplicación I
+## Aplicación
 
-- Tenemos X e Y que tienen distribuciones condicionales del tipo exponencial (restringidas al intervalo $(0,B)$:
+### Condicionales exponenciales truncas
 
 $$
-f(x|y) \propto y e^{-yx}, 0 < x < B < \infty \\
-f(y|x) \propto x e^{-xy}, 0 < y < B < \infty 
+\begin{aligned}
+f(x|y) &= \frac{y e^{-yx}}{1- e^{-By}}, 0 < x < B < \infty \\
+f(y|x) &= \frac{x e^{-xy}}{1- e^{-By}}, 0 < y < B < \infty 
+\end{aligned}
 $$
 
-## Distribución
-
-- Tomamos B = 5, se mantienen 25000 repeticiones y se desechan las primeras 1500.Los muestreos se realizan de distribuciones truncas exponenciales.
-
-```{r include=FALSE, eval=FALSE}
-B <- 5 #parámetro que trunca la dist. exponencial
-k <- 15 #
-R <- 500 #numero de repeticiones a mantener
-iter <- R + burnin
-
-#inicializamos los vectores donde se guardarán las sucesiones
-X_vec <- vector(mode="double", length=R)
-Y_vec <- vector(mode="double", length=R)
-
-
-```
-
-```{r eval=FALSE, include=FALSE}
-for (i in c(1:R)) {
-  y <- rtrunc(1, spec = "norm", a = 0, b = B)
-  
-  for (j in 1:k) {
-    K_x <- 1 / (1 - exp(-B*y))
-    x <- rtrunc(1, spec = "exp", a = 0, b = B, rate = y)
-    K_y <- 1 / (1 - exp(-B*x))
-    y <- rtrunc(1, spec = "exp", a = 0, b = B, rate = x)
-  }
-  X_vec[i] <- x
-  Y_vec[i] <- y
-}
-
-```
-
-```{r include=FALSE, eval=FALSE}
-data_frame(val = X_vec) %>%
-          ggplot(., aes(val)) + 
-                geom_histogram(aes(y=..density..), binwidth = 0.5, colour="black", fill="white") + 
-                 geom_density(alpha=.2, fill="#FF6666") 
-```
-
-```{r eval=FALSE, include=FALSE}
-for (i in c(1:R)) {
-  y <- rtrunc(1, spec = "norm", a = 0, b = B)
-  
-  for (j in 1:k) {
-    u <- rtrunc(1, spec = "unif", a = -1, b = 1 / (1 - exp(-B*y)))
-    x <- -log(1 - u * (1 - exp(-B*y))) / y
-    u <- rtrunc(1, spec = "unif", a = -1, b = 1 / (1 - exp(-B*x)))
-    y <- -log(1 - u * (1 - exp(-B*x))) / x
-  }
-  X_vec[i] <- x
-  Y_vec[i] <- y
-}
-
-hist(X_vec)
-```
-
-```{r include=FALSE}
-B <- 5
-k <- 100
-R <- 25000 #numero de repeticiones a mantener
-burnin <- 1500 #observaciones a descartar
-iter <- R + burnin
-y <- -1 #inicializa el algoritmo
-
-#inicializamos los vectores donde se guardarán las sucesiones
-X_vec <- vector(mode="double", length=R)
-Y_vec <- vector(mode="double", length=R)
-
-
+```{r  out.width = "50%", fig.align='center'}
+img1_path <- "images/02_marginal_x_exponencial_truncada.jpg"
+include_graphics(img1_path) 
 ```
 
 
-```{r metodo_diego_wk, include=FALSE}
-#algoritmo de sampling visto en clase
-y <- rtrunc(1, spec = "norm", a = 0, b = B)
-for (i in 1:iter) {
-  K_x <- 1 / (1 - exp(-B*y))
-  x <- rtrunc(1, spec = "exp", a = 0, b = B, rate = y)
-  K_y <- 1 / (1 - exp(-B*x))
-  y <- rtrunc(1, spec = "exp", a = 0, b = B, rate = x)  
-  if (i > burnin) {
-    X_vec[i] <- x
-    Y_vec[i] <- y
-  }
-  }
-  
-```
-
-```{r graph1_acotado, fig.height=3, fig.width=4}
-data_frame(val = X_vec) %>%
-          ggplot(., aes(val)) + 
-                geom_histogram(aes(y=..density..), binwidth = 0.2, colour="black", fill="white") + 
-                 geom_density(alpha=.2, fill="#FF6666") 
-```
 
 
-## Una prueba simple de la convergencia del muestrador de Gibbs
+
+## Prueba simple de la convergencia del muestrador de Gibbs - Caso Discreto
 
 Mostraremos como converge el muestreo tomando como ejemplo una distribución bivariada, donde X e Y se distribuyen Bernoulli de manera conjunta.
 
-
-<div class="centered">
-![](images/01_ejemplo-distribucion-bivariada-bernoulli.jpg)
-</div>
+```{r  out.width = "50%", fig.align='center'}
+img1_path <- "images/01_ejemplo-distribucion-bivariada-bernoulli.jpg"
+include_graphics(img1_path) 
+```
 
 ***
 La distribución conjunta de X, Y está dada por:
@@ -210,13 +121,16 @@ A_{x|y}=\begin{bmatrix} Prob(X=0|Y=0) & Prob(X=1|Y=0)\\
 
 ***
 
-Dado que estamos interesados en muestrar de la marginal de X, nos interesan los valores $X'_0, X'_1, X'_2, \cdots$. Sin embargo, para ir de $X'_0 \rightarrow X'_1$ debemos  muestrar $Y'_1$, es decir, $X'_0 \rightarrow Y'_1 \rightarrow X'_1$. 
+- Queremos muestrar de la marginal de X ($X'_0, X'_1, X'_2, \cdots$). 
 
+- Para ir de $X'_0 \rightarrow X'_1$ debemos  muestrar $Y'_1$, es decir, $X'_0 \rightarrow Y'_1 \rightarrow X'_1$. 
+
+<br>
 
 $$
-P(X'_1 = x_1 |X'_0 = x_0) = \sum_y P(X'_1 = x_1 |Y'_1 = y) \times P(Y'_1 = y_1 |X'_0 = x_0) 
+P(X'_1 = x_1 |X'_0 = x_0) = \sum_y P(X'_1 = x_1 |Y'_1 = y) \times P(Y'_1 = y |X'_0 = x_0) 
 $$
-
+<br>
 
 Para este caso en particular, se tiene que la matrices de transición para x está dada por:
 
@@ -224,19 +138,18 @@ Para este caso en particular, se tiene que la matrices de transición para x está
 
 Ahora, es directo calcular la distribución marginal de realización k, $X'_k$:
 
-$f_k = f_0 A^k_{x|x} = (f_0 A^{k-1}_{x|x})A_{x|x} = f_{k-1}A_{x|x}$
-
-
+$$f_k = f_0 A^k_{x|x} = (f_0 A^{k-1}_{x|x})A_{x|x} = f_{k-1}A_{x|x}$$
 
 ***
 
 Bajo ciertas condiciones, se tiene un punto fijo tal que:
 
 $$ f = f A_{x|x}$$
-
+\
 En nuestro caso simple:
-
-
+\
+\
+\
 $$
 \begin{aligned}
 f_x A_{x|x} &=  f_x A_{y|x} A_{x|y} \\
@@ -265,23 +178,60 @@ f_x A_{x|x} &=  f_x A_{y|x} A_{x|y} \\
 \end{aligned}
 $$
 
+***
 
+### Ejemplo numérico
 
-## Intuición para el caso bivariado
+Tomemos $p_1 = 0.1, p_2 = 0.4, p_3 = 0.15$ y $p_4 = 0.35$. Por tanto:
 
--> ¿Cómo es que podemos llegar a partir de las condicionales a la marginal? 
+$$
+f_x = \begin{bmatrix}
+                   p_1 + p_3 & p_2 + p_4
+                \end{bmatrix} = 
+      \begin{bmatrix}
+                   0.25 & 0.75
+                \end{bmatrix}
+$$
+
+Ahora, partamos de $f_0 = [0.99 \quad 0.01]$, es decir, alejados del valor de la marginal de x. Se tiene:
+
+$$
+\begin{aligned}
+f_1 &= f_0 \times A_{xx} =  [0.99 \quad 0.01] \times \begin{bmatrix} 
+                  0.26 & 0.74 \\
+                  0.24667& 0.7533
+                \end{bmatrix} \\
+f_1 &= [0.2598667  \quad 0.7498684] \\
+f_2 &= [0.2501316  \quad 0.7499982] \\
+f_3 &= [0.2500018   \quad 0.7499982] \\
+f_4 &= [0.25    \quad 0.75] \\
+\end{aligned}
+$$
+
+## Intuición para el caso bivariado continuo
+
+¿Cómo es que podemos llegar a partir de las condicionales a la marginal? 
 
 - Conocemos $f_{X|Y}(x|y)$ y $f_{Y|X}(y|x)$. Si queremos la marginal, por definición:
 
 $$
 f_X(x) = \int f_{xy}(x,y)dy
 $$
+
 - Por Bayes sabemos que: $f_{xy}(x,y) = f_{X|Y}(x|y)f_Y(y)$, por tanto:
 
 $$
 f_X(x) = \int f_{X|Y}(x|y)f_Y(y)dy
 $$
-De manera similar, tenemos $f_{xy}(x,y) = f_{Y|X}(y|x)f_X(y)$ con $f_Y(y) = \int f_{Y|X}(y|x)f_X(x)dx$. Reemplazando:
+De manera similar, tenemos $f_{xy}(x,y) = f_{Y|X}(y|x)f_X(y)$ con:
+
+$$f_Y(y) = \int f_{Y|X}(y|x)f_X(x)dx$$
+
+***
+Reemplazando:
+<br>
+<br>
+<br>
 
 $$
 \begin{aligned}
@@ -292,6 +242,8 @@ f_X(x) &= \int f_{X|Y}(x|y)\int f_{Y|X}(y|t)f_X(t)dtdy \\
 $$
 
 con $h(x,t) = \left [ \int f_{X|Y}(x|y) f_{Y|X}(y|t) dy \right ]$.
+<br>
+<br>
 
 - Llegamos a lo que se conoce como una ecuación de punto fijo integral.
 
@@ -299,21 +251,25 @@ con $h(x,t) = \left [ \int f_{X|Y}(x|y) f_{Y|X}(y|t) dy \right ]$.
 
 ***
 
-¿Siempre tiene solución?
+ <font size="6"> <b> ¿Gibbs siempre converge a la solución?</b> </font> 
 
 Veamos el primer ejemplo, pero sin acotar las distribuciones condicionales.
 
-
+<br>
+<br>
+<br>
 $$
 f(x|y) =  y e^{-yx}, 0 < x < \infty \\
 f(y|x) = x e^{-xy}, 0 < y < \infty 
 $$
 $$
 \begin{aligned}
-f_{X}(x) &= \int \left [\int y\exp^{-yx}t\exp^{-ty}dy \right]f_X(t)dt \\
-         &= \int \left [\frac{t}{(x+t)^2} \right]f_X(t)dt
+f_{X}(x) &= \int_0^\infty \left [\int_0^\infty y e^{-yx}t e^{-ty}dy \right]f_X(t)dt \\
+         &= \int_0^\infty \left [\frac{t}{(x+t)^2} \right]f_X(t)dt
 \end{aligned}
 $$
+
+***
 Y notamos que $f_X(t) = 1/t$ es solución puesto que:
 
 $$
@@ -324,6 +280,7 @@ $$
             &=   0 -   \frac{-1}{x} = \frac{1}{x}\\
 \end{aligned}
 $$
+
 ***
 
 Pero cuando intentamos aplicar el muestrador de Gibbs a estas condicionales, no obtenemos convergencia:
@@ -341,7 +298,7 @@ Y_vec <- vector(mode="double", length=R)
 ```
 
 
-```{r metodo_diego_wk, include=FALSE}
+```{r ejemplo-no-converge, include=FALSE}
 #algoritmo de sampling visto en clase
 #y <- rtrunc(1, spec = "norm", a = 0, b = B)
 y <- rtrunc(1, spec = "norm", a = 0, b = Inf)
@@ -358,44 +315,49 @@ for (i in 1:iter) {
   }
 }
 
-f_x <- 1 / X_vec
 ```
 
 
-```{r graph2-no_acotado, fig.height=3, fig.width=4}
-data_frame(val = X_vec) %>%
+```{r graph2-no_acotado, fig.height=3, fig.width=4, include=TRUE}
+plot1 <- data_frame(val = X_vec) %>%
           filter(val < 80) %>%
           ggplot(., aes(val)) + 
-                geom_histogram( binwidth = 2)  
-#falta graficar 1/x            
-    
+                geom_histogram()  + 
+                labs(caption = "Histograma completo", x = "x", y = "Total")
+plot1
 ```
-
-```{r graph3-no_acotado_limitado, fig.height=3, fig.width=4}
-x_graph <- 1:2500/100
-y_graph <- 1 / x_graph
-
-data_frame(val = X_vec, f = X_vec) %>%
-          filter(val < 24) %>%
+```{r graph3-no_acotado_limitado, fig.height=3, fig.width=4, include=FALSE}
+plot2 <- data_frame(val = X_vec, f = X_vec) %>%
+          #filter(val < 24) %>%
           ggplot(., aes(val)) + 
                 geom_histogram( binwidth = 2)  +
                 coord_cartesian(xlim=c(0,25), ylim=c(0, 150)) +
-                geom_line(data = data_frame(x_graph, y_graph), aes(x = x_graph, y = y_graph))
-#falta graficar 1/x            
+                labs(caption = "Zoom en el eje y", x = "x", y = "Total")
+```
 
-
+```{r, fig.align='center'}
+grid.arrange(plot1, plot2, ncol = 2)
 
 ```
 
-Vemos que ahora el procedimiento de Gibbs no converge puesto que x toma valores cada vez más grandes.
+***
+- Ahora el procedimiento de Gibbs no converge (no obtenemos una aproximación de $1/x$).
 
-Podemos evitar esto si truncamos las distribuciones condicionales de manera que se cumpla:
+- Podemos evitar esto si truncamos las distribuciones condicionales de manera que se cumpla:
 
 $$
 \int_0^B f_X(x)dx < \infty
 $$
 
-Vemos que en caso sin truncar, las marginal no integra a un número finito: $\int_0^\infty  \frac{1}{x}dx \rightarrow \infty$
+- La marginal ya no integra a un número finito: 
 
-Una condición para que algoritmo converga es que la marginal sea una función de densidad $\int f_X(x)dx < \infty$. Una manera de segurar esto es limitando las condicionales.
+$$\int_0^\infty  \frac{1}{x}dx \rightarrow \infty$$
+
+### Conclusión
+
+Una condición para que algoritmo converga es que la marginal sea una función de densidad $\int f_X(x)dx < \infty$. Una manera de segurar esto es acotando las condicionales.
+
+## {.flexbox .vcenter}
+
+ <font size="16"> <b> Muchas Gracias!</b> </font> 
 
